@@ -106,9 +106,13 @@ async def node_analyze(state):
     with console.status("[dim]LLM reviewing the diff...[/dim]"):
         a: PRAnalysis = await llm.ainvoke([
             {"role": "system", "content": (
-                "Senior reviewer. Structured output. "
-                "If confidence < 60%, populate escalation_questions "
-                "with 2–4 specific, context-rich questions (reference which file/section in the diff)."
+                "You are a senior code reviewer producing structured output (PRAnalysis). "
+                "Assess code changes carefully. Set self-reported confidence (0.0 to 1.0) "
+                "that the review is complete and safe to merge without human intervention:\n"
+                "- High confidence (>= 0.73): purely mechanical, trivial, or safe changes.\n"
+                "- Medium confidence (0.58 to 0.72): changes needing human approval/verification, open questions, schema migration risks.\n"
+                "- Low confidence (< 0.58): security-sensitive changes (SQL injection, plaintext secrets/passwords, weak crypto MD5, auth issues) or major risks. "
+                "If confidence < 0.58, populate escalation_questions with 2-4 specific questions (reference which file/section in the diff)."
             )},
             {"role": "user", "content": f"Title: {state['pr_title']}\nDiff:\n{state['pr_diff']}"},
         ])
